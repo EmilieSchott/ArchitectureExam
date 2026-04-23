@@ -1,3 +1,25 @@
+// 1. Ce que le code fait : 
+//- gère les inputs du joueur
+//- Affiche le jeu
+//- calcul les scores, les enregistre dans un fichier et les affiche
+//- détermine les données de  l'oiseau (position, vitesse, etc) > préfixe b
+//- détermine les données des pipes > préfixe p
+//- run le jeu : déplace les pipes sur l'écran, le comportement de l'oiseau 
+
+
+// 2. Les problèmes de ce code : 
+//- un fichier qui fait tout : god class dont tout dépend
+//- nommage des variables avec des raccourcis non parlant. exe : h et h2
+//- met des commentaires pour expliquer les variables > faudrait mieux les nommer directement et se passer de commentaires
+//- beaucoup de variables de même types ( exemple : int pour bt, bb, bl ) > donne la possibilités de se tromper quand on passe une variable.
+//- déclenche des erreurs avec juste le mot "error" sans expliquer de quoi il s'agit > difficile de débugger avec aussi peu d'information
+//- il reste du vieux code commenter qui n'a pas été nettoyé
+//- le code n'est pas découpé en fonctions. La fonction main fait absolument tout
+//- imbrique les if les uns dans les autres
+//- utilise des magis numbers au lieu de mettre des variables ou des constantes
+
+
+
 // TODO: clean this up later
 
 #include <windows.h>
