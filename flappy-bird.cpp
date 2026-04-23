@@ -1,20 +1,20 @@
 // 1. Ce que le code fait : 
-//- gère les inputs du joueur
+//- gï¿½re les inputs du joueur
 //- Affiche le jeu
 //- calcul les scores, les enregistre dans un fichier et les affiche
-//- détermine les données de  l'oiseau (position, vitesse, etc) > préfixe b
-//- détermine les données des pipes > préfixe p
-//- run le jeu : déplace les pipes sur l'écran, le comportement de l'oiseau 
+//- dï¿½termine les donnï¿½es de  l'oiseau (position, vitesse, etc) > prï¿½fixe b
+//- dï¿½termine les donnï¿½es des pipes > prï¿½fixe p
+//- run le jeu : dï¿½place les pipes sur l'ï¿½cran, le comportement de l'oiseau 
 
 
-// 2. Les problèmes de ce code : 
-//- un fichier qui fait tout : god class dont tout dépend
-//- nommage des variables avec des raccourcis non parlant. exe : h et h2
+// 2. Les problï¿½mes de ce code : 
+//- un fichier qui fait tout : god class dont tout dï¿½pend
+//- nommage des variables avec des raccourcis non parlant. exe : h et outputHandle
 //- met des commentaires pour expliquer les variables > faudrait mieux les nommer directement et se passer de commentaires
-//- beaucoup de variables de même types ( exemple : int pour bt, bb, bl ) > donne la possibilités de se tromper quand on passe une variable.
-//- déclenche des erreurs avec juste le mot "error" sans expliquer de quoi il s'agit > difficile de débugger avec aussi peu d'information
-//- il reste du vieux code commenter qui n'a pas été nettoyé
-//- le code n'est pas découpé en fonctions. La fonction main fait absolument tout
+//- beaucoup de variables de mï¿½me types ( exemple : int pour birdTop, birdBottom, bl ) > donne la possibilitï¿½s de se tromper quand on passe une variable.
+//- dï¿½clenche des erreurs avec juste le mot "error" sans expliquer de quoi il s'agit > difficile de dï¿½bugger avec aussi peu d'information
+//- il reste du vieux code commenter qui n'a pas ï¿½tï¿½ nettoyï¿½
+//- le code n'est pas dï¿½coupï¿½ en fonctions. La fonction main fait absolument tout
 //- imbrique les if les uns dans les autres
 //- utilise des magis numbers au lieu de mettre des variables ou des constantes
 
@@ -35,43 +35,45 @@
 
 int main()
 {
-  HANDLE h  = GetStdHandle(STD_INPUT_HANDLE);  // input
-  HANDLE h2 = GetStdHandle(STD_OUTPUT_HANDLE); // output
-  if (h == INVALID_HANDLE_VALUE)  { std::cerr << "error"  << std::endl; return 1; }
-  if (h2 == INVALID_HANDLE_VALUE) { std::cerr << "error" << std::endl; return 1; }
+  HANDLE inputHandle  = GetStdHandle(STD_INPUT_HANDLE);  // input
+  HANDLE outputHandle = GetStdHandle(STD_OUTPUT_HANDLE); // output
+  if (inputHandle == INVALID_HANDLE_VALUE)  { std::cerr << "error"  << std::endl; return 1; }
+  if (outputHandle == INVALID_HANDLE_VALUE) { std::cerr << "error" << std::endl; return 1; }
 
   // use words for console io
   DWORD m  = 0;
   DWORD m2 = 0;
   DWORD m3 = 0;
-  if (!GetConsoleMode(h,  &m))  { std::cerr << "error" << std::endl; return 1; }
+  if (!GetConsoleMode(inputHandle,  &m))  { std::cerr << "error" << std::endl; return 1; }
   m2 = m;
   m2 &= ~ENABLE_LINE_INPUT;
   m2 &= ~ENABLE_ECHO_INPUT;
-  if (!SetConsoleMode(h, m2))   { std::cerr << "error" << std::endl; return 1; }
-  if (GetConsoleMode(h2, &m3))  SetConsoleMode(h2, m3 | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+  if (!SetConsoleMode(inputHandle, m2))   { std::cerr << "error" << std::endl; return 1; }
+  if (GetConsoleMode(outputHandle, &m3))  SetConsoleMode(outputHandle, m3 | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
   // bird
-  float by = 9.0f;         // y position (float)
-  float bv = 0.0f;         // velocity
-  int   bt = 0;            // top (int)
-  int   bb = 0;            // bottom (int)
-  int   bl = 10;           // left
-  int   br = 10 + 2 - 1;  // right
-  int dead = 0;            // 0 = alive, 1 = dead
-  float t  = 0.0f;         // spawn timer
-  unsigned long long sc  = 0; // current score
-  unsigned long long bsc = 0; // best score
-  // hud padding
-  int lp = 0; // left padding
-  int rp = 0; // right padding
-  // pipe data
-  std::vector<float> px; // x positions
-  std::vector<int>   pg; // gap tops
-  std::vector<int>   ps; // scored flag (0 or 1)
+  float birdYPosition = 9.0f;         // y position (float)
+  float birdVelocity = 0.0f;         // velocity
+  int   birdTop = 0;            // top (int)
+  int   birdBottom = 0;            // bottom (int)
+  int   birdLeft = 10;           // left
+  int   birdRight = 10 + 2 - 1;  // right
+  int bDead = 0;            // 0 = alive, 1 = dead
+  float spawnTimer  = 0.0f;         // spawn timer
+  unsigned long long currentScore  = 0; // current score
+  unsigned long long bestScore = 0; // best score
 
-  // rng
-  std::mt19937 rng(std::random_device{}());
+  // hud padding
+  int leftPadding = 0; // left padding
+  int rightPadding = 0; // right padding
+
+  // pipe data
+  std::vector<float> pipesXPosition; // x positions
+  std::vector<int>   pipesGapTop; // gap tops
+  std::vector<int>   pipesBScored; // scored flag (0 or 1)
+
+  // randomNumberGenerator
+  std::mt19937 randomNumberGenerator(std::random_device{}());
   std::uniform_int_distribution<int> d(2, 20 - 6 - 2); // gap position
 
   INPUT_RECORD rec;
@@ -84,15 +86,15 @@ int main()
   std::ifstream fin("best-score.txt");
   if (fin)
   {
-    fin >> bsc;
-    if (!fin) bsc = 0; // reset if read failed
+    fin >> bestScore;
+    if (!fin) bestScore = 0; // reset if read failed
   }
   fin.close(); // close the file
 
   auto prev = std::chrono::steady_clock::now();
 
   // main loop
-  while (dead == 0)
+  while (bDead == 0)
   {
     // delta time
     auto now = std::chrono::steady_clock::now();
@@ -102,17 +104,17 @@ int main()
 
     // read input events
     DWORD nEvents = 0;
-    if (!GetNumberOfConsoleInputEvents(h, &nEvents)) {
-      SetConsoleMode(h, m);
+    if (!GetNumberOfConsoleInputEvents(inputHandle, &nEvents)) {
+      SetConsoleMode(inputHandle, m);
       return 1;
     }
 
     for (DWORD i = 0; i < nEvents; ++i) // loop through events
     {
-      if (!ReadConsoleInput(h, &rec, 1, &ne))
+      if (!ReadConsoleInput(inputHandle, &rec, 1, &ne))
       {
         std::cerr << "Failed to read console input." << std::endl;
-        SetConsoleMode(h, m);
+        SetConsoleMode(inputHandle, m);
         return 1;
       } // end if ReadConsoleInput
 
@@ -123,89 +125,89 @@ int main()
         {
           if (k.wVirtualKeyCode == VK_RETURN)
           {
-            bv = -14.0f;
+            birdVelocity = -14.0f;
           } // end if enter
         } // end if key down
       } // end if key event
     } // end for each event
 
-    bv = bv + 42.0f * dt;
-    by = by + bv * dt;
+    birdVelocity = birdVelocity + 42.0f * dt;
+    birdYPosition = birdYPosition + birdVelocity * dt;
 
-    t = t + dt;
-    if (t >= 1.4f)
+    spawnTimer = spawnTimer + dt;
+    if (spawnTimer >= 1.4f)
     {
-      t = t - 1.4f;
-      px.push_back(50.0f); 
-      pg.push_back(d(rng)); 
-      ps.push_back(0); 
+      spawnTimer = spawnTimer - 1.4f;
+      pipesXPosition.push_back(50.0f); 
+      pipesGapTop.push_back(d(randomNumberGenerator)); 
+      pipesBScored.push_back(0); 
     } 
 
-    for (int i = 0; i < (int)px.size(); i++) // loop over all pipes
+    for (int i = 0; i < (int)pipesXPosition.size(); i++) // loop over all pipes
     {
-      px[i] = px[i] - 18.0f * dt; // move pipe left
+      pipesXPosition[i] = pipesXPosition[i] - 18.0f * dt; // move pipe left
 
-      int pipeRight = (int)std::floor(px[i]) + 6 - 1;
-      if (ps[i] == 0 && pipeRight < 10) {
-        ps[i] = 1;         
-        sc = sc + 1;        
-        if (sc > bsc) bsc = sc;
+      int pipeRight = (int)std::floor(pipesXPosition[i]) + 6 - 1;
+      if (pipesBScored[i] == 0 && pipeRight < 10) {
+        pipesBScored[i] = 1;         
+        currentScore = currentScore + 1;        
+        if (currentScore > bestScore) bestScore = currentScore;
       }}
 
-    for (int i = (int)px.size() - 1; i >= 0; i--) {
-      if (px[i] + 6.0f < 0.0f) 
+    for (int i = (int)pipesXPosition.size() - 1; i >= 0; i--) {
+      if (pipesXPosition[i] + 6.0f < 0.0f) 
       {
-        px.erase(px.begin() + i); 
-        pg.erase(pg.begin() + i); 
-        ps.erase(ps.begin() + i); 
+        pipesXPosition.erase(pipesXPosition.begin() + i); 
+        pipesGapTop.erase(pipesGapTop.begin() + i); 
+        pipesBScored.erase(pipesBScored.begin() + i); 
       }
     }
 
     // collision
-    bt = (int)std::floor(by); 
-    bb = bt + 2 - 1;          
-    bl = 10;                   // same every frame
-    br = 10 + 2 - 1;           // same every frame
+    birdTop = (int)std::floor(birdYPosition); 
+    birdBottom = birdTop + 2 - 1;          
+    birdLeft = 10;                   // same every frame
+    birdRight = 10 + 2 - 1;           // same every frame
     // check wall 
-    if (bt < 0 || bb >= 20)  { dead = 1;  }
+    if (birdTop < 0 || birdBottom >= 20)  { bDead = 1;  }
 
-    if (!dead)
+    if (!bDead)
     {
-      for (int i = 0; i < (int)px.size(); i++)
+      for (int i = 0; i < (int)pipesXPosition.size(); i++)
       {
-        int pl = (int)std::floor(px[i]);
+        int pl = (int)std::floor(pipesXPosition[i]);
         int pr = pl + 6 - 1;
 
-        if (br >= pl && bl <= pr)
+        if (birdRight >= pl && birdLeft <= pr)
         {
-          for (int y = bt; y <= bb; y++)
+          for (int y = birdTop; y <= birdBottom; y++)
           {
-            if (y < pg[i] || y >= pg[i] + 6)
+            if (y < pipesGapTop[i] || y >= pipesGapTop[i] + 6)
             {
-              dead = 1;
+              bDead = 1;
               break;
             }
           }
         }
 
-        if (dead != 0) break;
+        if (bDead != 0) break;
       }
     }
 
-    if (dead != 0) break;
+    if (bDead != 0) break;
 
     std::vector<std::string> frame(20, std::string(50, ' '));
 
-    for (int i = 0; i < (int)px.size(); i++)
+    for (int i = 0; i < (int)pipesXPosition.size(); i++)
     {
-      int pl = (int)std::floor(px[i]);
+      int pl = (int)std::floor(pipesXPosition[i]);
       for (int dx = 0; dx < 6; dx++)
       {
         int x = pl + dx;
         if (x < 0 || x >= 50) continue;
         for (int y = 0; y < 20; y++)
         {
-          if (!(y >= pg[i] && y < pg[i] + 6))
+          if (!(y >= pipesGapTop[i] && y < pipesGapTop[i] + 6))
           {
             frame[y][x] = 'P';
           }
@@ -215,7 +217,7 @@ int main()
 
     for (int dy = 0; dy < 2; dy++)
     {
-      int y = bt + dy;
+      int y = birdTop + dy;
       if (y < 0 || y >= 20) continue;
       for (int dx = 0; dx < 2; dx++)
       {
@@ -224,10 +226,10 @@ int main()
       }
     }
 
-    std::string scoreText = "Score: " + std::to_string(sc) + "   Best: " + std::to_string(bsc);
+    std::string scoreText = "Score: " + std::to_string(currentScore) + "   Best: " + std::to_string(bestScore);
     if (scoreText.size() > 50) scoreText = scoreText.substr(0, 50);
-    lp = (int)((50 - (int)scoreText.size()) / 2);
-    rp = 50 - lp - (int)scoreText.size();
+    leftPadding = (int)((50 - (int)scoreText.size()) / 2);
+    rightPadding = 50 - leftPadding - (int)scoreText.size();
 
     std::cout << "\x1b[2J\x1b[H";
     std::cout << "+" << std::string(50, '-') << "+" << "\n";
@@ -254,7 +256,7 @@ int main()
     }
     std::cout << "+" << std::string(50, '-') << "+" << "\n";
     std::cout << "+" << std::string(50, '-') << "+" << "\n";
-    std::cout << "|" << std::string(lp, ' ') << scoreText << std::string(rp, ' ') << "|\n";
+    std::cout << "|" << std::string(leftPadding, ' ') << scoreText << std::string(rightPadding, ' ') << "|\n";
     std::cout << "+" << std::string(50, '-') << "+" << "\n";
     std::cout.flush();
 
@@ -267,10 +269,10 @@ int main()
 
   // save best score to file
   std::ofstream fout("best-score.txt", std::ios::trunc);
-  if (fout) fout << bsc; // write best score
+  if (fout) fout << bestScore; // write best score
   fout.close(); // close the file
 
   // restore original console mode
-  SetConsoleMode(h, m);
+  SetConsoleMode(inputHandle, m);
   return 0;
 }
